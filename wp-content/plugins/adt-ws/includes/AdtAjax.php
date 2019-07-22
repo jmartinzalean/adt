@@ -153,29 +153,33 @@ class AdtAjax {
                 $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_bathrooms');
             }
 
-            /* Attach Garages Post Meta */
-            if ( isset( $_POST['garages'] ) && ! empty( $_POST['garages'] ) ) {
-                update_post_meta( $property_id, 'REAL_HOMES_property_garage', floatval( $_POST['garages'] ) );
+            /* Attach Year Post Meta */
+            if ( isset( $this->data['year_built'] ) && ( $this->data['year_built']) ) {
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_year_built', $this->data['year_built']);
             } else {
-                delete_post_meta( $property_id, 'REAL_HOMES_property_garage' );
-            }
-
-            /* Attach Year Built Post Meta */
-            if ( isset( $_POST['year-built'] ) && ! empty( $_POST['year-built'] ) ) {
-                update_post_meta( $property_id, 'REAL_HOMES_property_year_built', floatval( $_POST['year-built'] ) );
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_year_built');
             }
 
             /* Attach Address Post Meta */
-            if ( isset( $_POST['address'] ) && ! empty( $_POST['address'] ) ) {
-                update_post_meta( $property_id, 'REAL_HOMES_property_address', sanitize_text_field( $_POST['address'] ) );
+            if ( isset( $this->data['street'] ) && ( $this->data['street']) ) {
+                $address = $this->data['street'] . ' '. $this->data['street_number'] . ' ' . $this->data['town'] .
+                    $this->data['zip_code'] . ' ' . $this->data['province'];
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_address', $address);
+            } else {
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_address');
             }
 
             /* Attach Address Post Meta */
-            if ( isset( $_POST['coordinates'] ) && ! empty( $_POST['coordinates'] ) ) {
-                update_post_meta( $property_id, 'REAL_HOMES_property_location', $_POST['coordinates'] );
+            if (( isset( $this->data['geo_lat'] ) && ( $this->data['geo_lat']) ) &&
+                    ( isset( $this->data['geo_lng'] ) && ( $this->data['geo_lng']) ) ){
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_location',
+                    $this->data['geo_lat'] . ',' . $this->data['geo_lng'] );
+            } else {
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_location');
             }
 
-            /* Agent Display Option */
+            /** TODO comprobar como insertar los agentes */
+            /* Agent Display Option
             if ( isset( $_POST['agent_display_option'] ) && ! empty( $_POST['agent_display_option'] ) ) {
                 update_post_meta( $property_id, 'REAL_HOMES_agent_display_option', $_POST['agent_display_option'] );
                 if ( ( $_POST['agent_display_option'] == 'agent_info' ) && isset( $_POST['agent_id'] ) ) {
@@ -186,31 +190,21 @@ class AdtAjax {
                 } else {
                     delete_post_meta( $property_id, 'REAL_HOMES_agents' );
                 }
-            }
+            }*/
 
             /* Attach Property ID Post Meta */
-            if ( isset( $_POST['property-id'] ) && ! empty( $_POST['property-id'] ) ) {
-                update_post_meta( $property_id, 'REAL_HOMES_property_id', sanitize_text_field( $_POST['property-id'] ) );
-            } else {
-                $auto_property_id    = get_option( 'inspiry_auto_property_id_check' );
-                $property_id_pattern = get_option( 'inspiry_auto_property_id_pattern' );
-                if ( ! empty( $auto_property_id ) && ( 'true' === $auto_property_id ) && ! empty( $property_id_pattern ) ) {
-                    $property_id_value = preg_replace( '/{ID}/', $property_id, $property_id_pattern );
-                    update_post_meta( $property_id, 'REAL_HOMES_property_id', sanitize_text_field( $property_id_value ) );
-                }
-            }
+            $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_id', $this->data['identifier']);
+            $this->updateorDeleteMeta($property_id, 'witei_id', $this->data['identifier']);
 
             /* Attach Virtual Tour Video URL Post Meta */
-            if ( isset( $_POST['video-url'] ) && ! empty( $_POST['video-url'] ) ) {
-                update_post_meta( $property_id, 'REAL_HOMES_tour_video_url', esc_url_raw( $_POST['video-url'] ) );
+            if ( isset( $this->data['video_url'] ) && ( $this->data['video_url']) ) {
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_tour_video_url', $this->data['video_url']);
+            } else {
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_tour_video_url');
             }
 
-            /* Attach Message to Reviewer */
-            if ( isset( $_POST['message_to_reviewer'] ) && ! empty( $_POST['message_to_reviewer'] ) ) {
-                update_post_meta( $property_id, 'inspiry_message_to_reviewer', esc_textarea( $_POST['message_to_reviewer'] ) );
-            }
-
-            /* Attach additional details with property */
+            /** TODO ver como añadir los datos extra */
+            /* Attach additional details with property
             if ( isset( $_POST['detail-titles'] ) && isset( $_POST['detail-values'] ) ) {
 
                 $additional_details_titles = $_POST['detail-titles'];
@@ -233,32 +227,7 @@ class AdtAjax {
                         update_post_meta( $property_id, 'REAL_HOMES_additional_details', $additional_details );
                     }
                 }
-            }
-
-            /* Attach Property as Featured Post Meta */
-            $featured = ( isset( $_POST['featured'] ) && ! empty( $_POST['featured'] ) ) ? 1 : 0;
-            update_post_meta( $property_id, 'REAL_HOMES_featured', $featured );
-
-            /* Property Submission Terms & Conditions */
-            $terms = ( isset( $_POST['terms'] ) && ! empty( $_POST['terms'] ) ) ? 1 : 0;
-            update_post_meta( $property_id, 'REAL_HOMES_terms_conditions', $terms );
-
-            /* Tour video image - in case of update */
-            $tour_video_image    = '';
-            $tour_video_image_id = 0;
-            if ( $action == 'update_property' ) {
-                $tour_video_image_id = get_post_meta( $property_id, 'REAL_HOMES_tour_video_image', true );
-                if ( ! empty( $tour_video_image_id ) ) {
-                    $tour_video_image_src = wp_get_attachment_image_src( $tour_video_image_id, 'property-detail-video-image' );
-                    $tour_video_image     = $tour_video_image_src[0];
-                }
-            }
-
-            /* If property is being updated, clean up the old meta information related to images */
-            if ( $action == 'update_property' ) {
-                delete_post_meta( $property_id, 'REAL_HOMES_property_images' );
-                delete_post_meta( $property_id, '_thumbnail_id' );
-            }
+            }  */
 
             /* Attach gallery images with newly created property */
             if ( isset( $_POST['gallery_image_ids'] ) ) {
@@ -331,13 +300,6 @@ class AdtAjax {
 
             }
 
-            /* Redirect to my properties page */
-            $my_properties_url = inspiry_get_my_properties_url();
-            if ( ! empty( $my_properties_url ) ) {
-                $separator = ( parse_url( $my_properties_url, PHP_URL_QUERY ) == null ) ? '?' : '&';
-                $parameter = ( $updated_successfully ) ? 'property-updated=true' : 'property-added=true';
-                wp_redirect( $my_properties_url . $separator . $parameter );
-            }
         }
     }
 
@@ -357,6 +319,13 @@ class AdtAjax {
         if ( $property_id > 0 ) {
             $updated_successfully = true;
         }
+
+        /* If property is being updated, clean up the old meta information related to images */
+        if ( $action == 'update_property' ) {
+            delete_post_meta( $property_id, 'REAL_HOMES_property_images' );
+            delete_post_meta( $property_id, '_thumbnail_id' );
+        }
+
 
     }
 
