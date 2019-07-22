@@ -31,6 +31,7 @@ class AdtAjax {
             && $this->data['agency']['name'] == 'ADT Inmobiliaria')) {
             return new WP_REST_Response(array('error' => 'No llega el nombre de la agencia, id o identificador'), 200);
         }
+        die('entra mal');
         $this->proccesProperty();
 
     }
@@ -258,7 +259,7 @@ class AdtAjax {
                 }
             }
 
-            /* Attach Propietario Post Meta */
+            /* Attach Propietario Post Meta
             if ( isset( $_POST['inspiry_property_email'] ) && ! empty( $_POST['inspiry_property_email'] ) ) {
                 $email = $_POST['inspiry_property_email'];
                 $myquery = new WP_Query( "post_type=contact&meta_key=recrm_contact_email&meta_value=". strtolower(trim($email))."&order=ASC&limit=1" );
@@ -283,22 +284,9 @@ class AdtAjax {
                 } else {
                     update_post_meta( $property_id, 'propietario_id', $post[0]->ID );
                 }
-            }
+            }*/
 
-
-            if ( 'add_property' == $_POST['action'] ) {
-                /*
-                 * inspiry_submit_notice function in property-submit-handler.php is hooked with this hook
-                 */
-                do_action( 'inspiry_after_property_submit', $property_id );
-
-            } elseif ( 'update_property' == $_POST['action'] ) {
-                /*
-                 * no default theme function is hooked with this hook
-                 */
-                do_action( 'inspiry_after_property_update', $property_id );
-
-            }
+            do_action( 'inspiry_after_property_submit', $property_id );
 
         }
     }
@@ -320,22 +308,20 @@ class AdtAjax {
             $updated_successfully = true;
         }
 
-        /* If property is being updated, clean up the old meta information related to images */
-        if ( $action == 'update_property' ) {
-            delete_post_meta( $property_id, 'REAL_HOMES_property_images' );
-            delete_post_meta( $property_id, '_thumbnail_id' );
-        }
+        delete_post_meta( $property_id, 'REAL_HOMES_property_images' );
+        delete_post_meta( $property_id, '_thumbnail_id' );
 
+        do_action( 'inspiry_after_property_update', $property_id );
 
     }
 
     private function findorCreateTerm($id, $term, $taxname = 'post_tag') {
 
-        /** TODO revisar que devuelve, puede ser un array o un id, mismo en el resto de terminos */
         $termid = term_exists($term);
 
         if (!$termid) {
-            $termid = wp_create_term($term, $taxname);
+            $termid = wp_insert_term($term, $taxname);
+            $termid = $termid['term_id'];
         }
 
         wp_set_object_terms( $id, $termid, $taxname );
