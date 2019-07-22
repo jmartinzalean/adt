@@ -1,7 +1,7 @@
 <?php
 
 /*
-Plugin Name: adt-ws
+Plugin Name: adtws
 Plugin URI: zalean.com
 Description: Plugin para conexion con Witei
 Version: 1.0.1
@@ -28,5 +28,17 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 defined('ABSPATH') or die();
+
+include_once dirname(__FILE__).'/includes/AdtAjax.php';
+
+new AdtAjax();
+
+function adtws_activate() {
+
+}
+
+function adtws_desactivate() {
+
+}
 
 
