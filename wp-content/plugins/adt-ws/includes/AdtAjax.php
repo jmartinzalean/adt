@@ -99,89 +99,58 @@ class AdtAjax {
          */
         if ( $property_id > 0 ) {
 
-            /** Busca y/o creacion de tipo de propiedad */
-            /** TODO revisar que devuelve, puede ser un array o un id, mismo en el resto de terminos */
-            $new_property['property-type'] = term_exists($this->data['kind']);
-
-            if (!$new_property['property-type']) {
-                $new_property['property-type'] = wp_create_term($this->data['kind'], 'property-type');
-            }
-
-            /* Attach Property Type with Newly Created Property */
             if ( isset( $this->data['kind'] ) && ( !empty($this->data['kind']) )) {
-                wp_set_object_terms( $property_id, intval( $this->data['kind'] ), 'property-type' );
+                $new_property['property-type'] = $this->findorCreateTerm($property_id, $this->data['kind'], 'property-type');
             }
 
-            /* Attach Property City with Newly Created Property */
-            $location_select_names = inspiry_get_location_select_names();
-            $locations_count       = count( $location_select_names );
-            for ( $l = $locations_count - 1; $l >= 0; $l -- ) {
-                if ( isset( $_POST[ $location_select_names[ $l ] ] ) ) {
-                    $current_location = $_POST[ $location_select_names[ $l ] ];
-                    if ( ( ! empty( $current_location ) ) && ( $current_location != inspiry_any_value() ) ) {
-                        wp_set_object_terms( $property_id, $current_location, 'property-city' );
-                        break;
+            if ( isset( $this->data['town'] ) && ( !empty($this->data['town']) )) {
+                $new_property['property-city'] = $this->findorCreateTerm($property_id, $this->data['town'], 'property-city');
+            }
+
+            if ( isset( $this->data['status'] ) && ( !empty($this->data['status']) )) {
+                $new_property['property-status'] = $this->findorCreateTerm($property_id, $this->data['status'], 'property-status');
+            }
+
+            if ( isset( $this->data['tags'] ) && ( !empty($this->data['tags']) )) {
+                $property_features = array();
+                foreach ($this->data['tags'] as $tag) {
+                    $termid = term_exists($tag);
+                    if (!$termid) {
+                        $termid = wp_create_term($tag, 'property-feature');
                     }
+                    $property_features[] = $termid;
                 }
-            }
-
-            /* Attach Property Status with Newly Created Property */
-            if ( isset( $_POST['status'] ) && ( '-1' != $_POST['status'] ) ) {
-                wp_set_object_terms( $property_id, intval( $_POST['status'] ), 'property-status' );
-            }
-
-            /* Attach Property Features with Newly Created Property */
-            if ( isset( $_POST['features'] ) ) {
-                if ( ! empty( $_POST['features'] ) && is_array( $_POST['features'] ) ) {
-                    $property_features = array();
-                    foreach ( $_POST['features'] as $property_feature_id ) {
-                        $property_features[] = intval( $property_feature_id );
-                    }
-                    wp_set_object_terms( $property_id, $property_features, 'property-feature' );
-                }
+                wp_set_object_terms( $property_id, $property_features, 'property-feature' );
             }
 
             /* Attach Price Post Meta */
-            if ( isset( $_POST['price'] ) && ! empty( $_POST['price'] ) ) {
-                update_post_meta( $property_id, 'REAL_HOMES_property_price', sanitize_text_field( $_POST['price'] ) );
-
-                if ( isset( $_POST['price-postfix'] ) && ! empty( $_POST['price-postfix'] ) ) {
-                    update_post_meta( $property_id, 'REAL_HOMES_property_price_postfix', sanitize_text_field( $_POST['price-postfix'] ) );
-                }
+            if ( isset( $this->data['selling_cost'] ) && ( $this->data['selling_cost']) ) {
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_price', $this->data['selling_cost']);
+            } elseif ( isset( $this->data['renting_cost'] ) && ( $this->data['renting_cost']) ) {
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_price', $this->data['renting_cost']);
             } else {
-                delete_post_meta( $property_id, 'REAL_HOMES_property_price' );
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_price');
             }
 
             /* Attach Size Post Meta */
-            if ( isset( $_POST['size'] ) && ! empty( $_POST['size'] ) ) {
-                update_post_meta( $property_id, 'REAL_HOMES_property_size', sanitize_text_field( $_POST['size'] ) );
-
-                if ( isset( $_POST['area-postfix'] ) && ! empty( $_POST['area-postfix'] ) ) {
-                    update_post_meta( $property_id, 'REAL_HOMES_property_size_postfix', sanitize_text_field( $_POST['area-postfix'] ) );
-                }
+            if ( isset( $this->data['area'] ) && ( $this->data['area']) ) {
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_size', $this->data['area']);
             } else {
-                delete_post_meta( $property_id, 'REAL_HOMES_property_size' );
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_size');
             }
 
             /* Attach Bedrooms Post Meta */
-            if ( isset( $_POST['bedrooms'] ) && ! empty( $_POST['bedrooms'] ) ) {
-                update_post_meta( $property_id, 'REAL_HOMES_property_bedrooms', floatval( $_POST['bedrooms'] ) );
+            if ( isset( $this->data['bedrooms'] ) && ( $this->data['bedrooms']) ) {
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_bedrooms', $this->data['bedrooms']);
             } else {
-                delete_post_meta( $property_id, 'REAL_HOMES_property_bedrooms' );
-            }
-
-            /* Attach Estado Post Meta */
-            if ( isset( $_POST['estado_reforma_id'] ) && ! empty( $_POST['estado_reforma_id'] ) ) {
-                update_post_meta( $property_id, 'estado_reforma_id', $_POST['estado_reforma_id'] );
-            } else {
-                delete_post_meta( $property_id, 'estado_reforma_id' );
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_bedrooms');
             }
 
             /* Attach Bathrooms Post Meta */
-            if ( isset( $_POST['bathrooms'] ) && ! empty( $_POST['bathrooms'] ) ) {
-                update_post_meta( $property_id, 'REAL_HOMES_property_bathrooms', floatval( $_POST['bathrooms'] ) );
+            if ( isset( $this->data['bathrooms'] ) && ( $this->data['bathrooms']) ) {
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_bathrooms', $this->data['bathrooms']);
             } else {
-                delete_post_meta( $property_id, 'REAL_HOMES_property_bathrooms' );
+                $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_bathrooms');
             }
 
             /* Attach Garages Post Meta */
@@ -387,6 +356,29 @@ class AdtAjax {
         $property_id = wp_update_post( $new_property );
         if ( $property_id > 0 ) {
             $updated_successfully = true;
+        }
+
+    }
+
+    private function findorCreateTerm($id, $term, $taxname = 'post_tag') {
+
+        /** TODO revisar que devuelve, puede ser un array o un id, mismo en el resto de terminos */
+        $termid = term_exists($term);
+
+        if (!$termid) {
+            $termid = wp_create_term($term, $taxname);
+        }
+
+        wp_set_object_terms( $id, $termid, $taxname );
+
+    }
+
+    private function updateorDeleteMeta($id, $metakey, $value = false) {
+
+        if ($value) {
+            update_post_meta( $id, $metakey, $value );
+        } else {
+            delete_post_meta( $id, $metakey );
         }
 
     }
