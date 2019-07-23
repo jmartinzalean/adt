@@ -241,24 +241,24 @@ class AdtAjax {
                 update_post_meta( $property_id, '_thumbnail_id', $gallery_image_ids[0] );
             }
 
-            /* Attach Propietario Post Meta
-            if ( isset( $_POST['inspiry_property_email'] ) && ! empty( $_POST['inspiry_property_email'] ) ) {
-                $email = $_POST['inspiry_property_email'];
+            /* Attach Propietario Post Meta */
+            if ( isset( $this->data['owner']['email'] ) && ! empty( $this->data['owner']['email'] ) ) {
+                $email = $this->data['owner']['email'];
                 $myquery = new WP_Query( "post_type=contact&meta_key=recrm_contact_email&meta_value=". strtolower(trim($email))."&order=ASC&limit=1" );
                 $post = array();
                 $post = $myquery->get_posts();
                 if (count($post) == 0) {
                     $data = array (
                         'ID' => 0,
-                        'post_title' => $_POST['inspiry_property_first_name'] . ' ' . $_POST['inspiry_property_last_name'] . ' ' . $_POST['inspiry_property_email'] . ' ' . $_POST['inspiry_property_mobile'],
+                        'post_title' => $this->data['owner']['name'] . ' ' . $this->data['owner']['email'] . ' ' . $this->data['owner']['phone'],
                         'post_status' => 'publish',
                         'post_type' => 'contact',
                         'meta_input' => array (
                             'recrm_contact_status' => ' Vendor',
-                            'recrm_contact_first_name' => $_POST['inspiry_property_first_name'],
-                            'recrm_contact_last_name' => $_POST['inspiry_property_last_name'],
-                            'recrm_contact_email' => $_POST['inspiry_property_email'],
-                            'recrm_contact_mobile' => $_POST['inspiry_property_mobile']
+                            'recrm_contact_first_name' => $this->data['owner']['name'],
+                            'recrm_contact_last_name' => '',
+                            'recrm_contact_email' => $this->data['owner']['email'],
+                            'recrm_contact_mobile' => $this->data['owner']['phone']
                         )
                     );
                     $postid = wp_insert_post($data);
@@ -266,7 +266,7 @@ class AdtAjax {
                 } else {
                     update_post_meta( $property_id, 'propietario_id', $post[0]->ID );
                 }
-            }*/
+            }
 
             do_action( 'inspiry_after_property_submit', $property_id );
 
