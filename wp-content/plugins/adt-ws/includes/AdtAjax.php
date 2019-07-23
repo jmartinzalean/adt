@@ -180,7 +180,37 @@ class AdtAjax {
             }
 
             /** TODO comprobar como insertar los agentes */
-            /* Agent Display Option
+            /* Agent Display Option*/
+
+            if ( isset( $this->data['owner']['email'] ) && ! empty( $this->data['owner']['email'] ) ) {
+                $email = $this->data['owner']['email'];
+                $myquery = new WP_Query( "post_type=contact&meta_key=recrm_contact_email&meta_value=". strtolower(trim($email))."&order=ASC&limit=1" );
+                $post = array();
+                $post = $myquery->get_posts();
+                if (count($post) == 0) {
+                    $data = array (
+                        'ID' => 0,
+                        'post_title' => $this->data['owner']['name'] . ' ' . $this->data['owner']['email'] . ' ' . $this->data['owner']['phone'],
+                        'post_status' => 'publish',
+                        'post_type' => 'contact',
+                        'meta_input' => array (
+                            'recrm_contact_status' => ' Vendor',
+                            'recrm_contact_first_name' => $this->data['owner']['name'],
+                            'recrm_contact_last_name' => '',
+                            'recrm_contact_email' => $this->data['owner']['email'],
+                            'recrm_contact_mobile' => $this->data['owner']['phone']
+                        )
+                    );
+                    $postid = wp_insert_post($data);
+                    update_post_meta( $property_id, 'propietario_id', $postid );
+                } else {
+                    update_post_meta( $property_id, 'propietario_id', $post[0]->ID );
+                }
+            }
+
+            do_action( 'inspiry_after_property_submit', $property_id );
+
+
             if ( isset( $_POST['agent_display_option'] ) && ! empty( $_POST['agent_display_option'] ) ) {
                 update_post_meta( $property_id, 'REAL_HOMES_agent_display_option', $_POST['agent_display_option'] );
                 if ( ( $_POST['agent_display_option'] == 'agent_info' ) && isset( $_POST['agent_id'] ) ) {
@@ -191,7 +221,7 @@ class AdtAjax {
                 } else {
                     delete_post_meta( $property_id, 'REAL_HOMES_agents' );
                 }
-            }*/
+            }
 
             /* Attach Property ID Post Meta */
             $this->updateorDeleteMeta($property_id, 'REAL_HOMES_property_id', $this->data['identifier']);
