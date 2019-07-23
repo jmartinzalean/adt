@@ -231,32 +231,14 @@ class AdtAjax {
             }  */
 
             /* Attach gallery images with newly created property */
-            if ( isset( $_POST['gallery_image_ids'] ) ) {
-                if ( ! empty( $_POST['gallery_image_ids'] ) && is_array( $_POST['gallery_image_ids'] ) ) {
-                    $gallery_image_ids = array();
-                    foreach ( $_POST['gallery_image_ids'] as $gallery_image_id ) {
-                        $gallery_image_ids[] = intval( $gallery_image_id );
-                        add_post_meta( $property_id, 'REAL_HOMES_property_images', $gallery_image_id );
-                    }
-                    if ( isset( $_POST['featured_image_id'] ) ) {
-                        $featured_image_id = intval( $_POST['featured_image_id'] );
-                        if ( in_array( $featured_image_id, $gallery_image_ids ) ) {     // validate featured image id
-                            update_post_meta( $property_id, '_thumbnail_id', $featured_image_id );
+            $imageids = $this->setImages();
 
-                            /* if video url is provided but there is no video image then use featured image as video image */
-                            if ( empty( $tour_video_image ) && ! empty( $_POST['video-url'] ) ) {
-                                update_post_meta( $property_id, 'REAL_HOMES_tour_video_image', $featured_image_id );
-                            }
-                        }
-                    } elseif ( ! empty( $gallery_image_ids ) ) {
-                        update_post_meta( $property_id, '_thumbnail_id', $gallery_image_ids[0] );
-
-                        /* if video url is provided but there is no video image then use featured image as video image */
-                        if ( empty( $tour_video_image ) && ! empty( $_POST['video-url'] ) ) {
-                            update_post_meta( $property_id, 'REAL_HOMES_tour_video_image', $gallery_image_ids[0] );
-                        }
-                    }
+            if ( ! empty( $imageids )  ) {
+                foreach ( $imageids as $gallery_image_id ) {
+                    $gallery_image_ids[] = intval( $gallery_image_id );
+                    add_post_meta( $property_id, 'REAL_HOMES_property_images', $gallery_image_id );
                 }
+                update_post_meta( $property_id, '_thumbnail_id', $gallery_image_ids[0] );
             }
 
             /* Attach Propietario Post Meta
@@ -338,6 +320,49 @@ class AdtAjax {
 
     }
 
+    private function setImages() {
+
+        // WordPress environment
+        require(dirname(__FILE__) . '/../../../../wp-load.php');
+        $upload_ids = array();
+
+        foreach ($this->data['pictures'] as $urlimage) {
+
+
+            $wordpress_upload_dir = wp_upload_dir();
+
+            $filename = time() .'jpg';
+
+            $new_file_path = $wordpress_upload_dir['path'] . '/' . $filename;
+
+            file_put_contents($new_file_path, file_get_contents($urlimage));
+
+// looks like everything is OK
+            if (file_exists($new_file_path)) {
+
+
+                $upload_ids[] = wp_insert_attachment(array(
+                    'guid' => $new_file_path,
+                    'post_mime_type' => mime_content_type($filename),
+                    'post_title' => preg_replace('/\.[^.]+$/', '', $filename),
+                    'post_content' => '',
+                    'post_status' => 'inherit'
+                ), $new_file_path);
+
+                // wp_generate_attachment_metadata() won't work if you do not include this file
+                require_once(ABSPATH . 'wp-admin/includes/image.php');
+
+                // Generate and save the attachment metas into the database
+                wp_update_attachment_metadata($upload_id, wp_generate_attachment_metadata($upload_id, $new_file_path));
+
+                // Show the uploaded file in browser
+                wp_redirect($wordpress_upload_dir['url'] . '/' . basename($new_file_path));
+
+            }
+        }
+
+        return $upload_ids;
+    }
 
 
 }
