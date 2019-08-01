@@ -31,7 +31,6 @@ class AdtAjax {
             && $this->data['agency']['name'] == 'ADT Inmobiliaria')) {
             return new WP_REST_Response(array('error' => 'No llega el nombre de la agencia, id o identificador'), 200);
         }
-        die('entra mal');
         $this->proccesProperty();
 
     }
@@ -117,7 +116,7 @@ class AdtAjax {
                 foreach ($this->data['tags'] as $tag) {
                     $termid = term_exists($tag);
                     if (!$termid) {
-                        $termid = wp_create_term($tag, 'property-feature');
+                        $termid = wp_insert_term($tag, 'property-feature');
                     }
                     $property_features[] = $termid;
                 }
@@ -328,7 +327,7 @@ class AdtAjax {
     }
 
     private function findorCreateTerm($id, $term, $taxname = 'post_tag') {
-
+        var_dump($id, $term, $taxname , 'findorCreateTerm');
         $termid = term_exists($term);
 
         if (!$termid) {
@@ -341,7 +340,7 @@ class AdtAjax {
     }
 
     private function updateorDeleteMeta($id, $metakey, $value = false) {
-
+        var_dump($id, $metakey, $value , 'updateorDeleteMeta');
         if ($value) {
             update_post_meta( $id, $metakey, $value );
         } else {
@@ -371,7 +370,7 @@ class AdtAjax {
             if (file_exists($new_file_path)) {
 
 
-                $upload_ids[] = wp_insert_attachment(array(
+                $upload_id = wp_insert_attachment(array(
                     'guid' => $new_file_path,
                     'post_mime_type' => mime_content_type($filename),
                     'post_title' => preg_replace('/\.[^.]+$/', '', $filename),
