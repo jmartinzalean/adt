@@ -37,19 +37,25 @@ class AdtAjax {
 
     private function proccesProperty() {
 
-        $arg = array('post_type' => 'property','meta_key' => 'witei_id','meta_value' => $this->data['identifier']);
+        $arg = array(
+            'post_type' => 'property',
+            'meta_key' => 'witei_id',
+            'meta_query' => array(
+                array(
+                    'key' => 'witei_id',
+                    'value' => $this->data['identifier'],
+                    'compare' => '=',
+                )
+            )
+        );
         $query = new WP_Query($arg);
         $result = $query->get_posts();
         if (count($result) == 0) {
             $this->createProperty();
         } else {
             $this->propierty = current($result);
-            $this->updateProperty();
+            //$this->updateProperty();
         }
-        echo '<pre>';
-        var_dump($result);
-        echo '</pre>';
-        die();
     }
 
     private function createProperty() {
@@ -114,9 +120,9 @@ class AdtAjax {
             if ( isset( $this->data['tags'] ) && ( !empty($this->data['tags']) )) {
                 $property_features = array();
                 foreach ($this->data['tags'] as $tag) {
-                    $termid = term_exists($tag);
+                    $termid = (int) term_exists($tag);
                     if (!$termid) {
-                        $termid = wp_insert_term($tag, 'property-feature');
+                        $termid = (int) wp_insert_term($tag, 'property-feature');
                     }
                     $property_features[] = $termid;
                 }
@@ -328,11 +334,11 @@ class AdtAjax {
 
     private function findorCreateTerm($id, $term, $taxname = 'post_tag') {
         var_dump($id, $term, $taxname , 'findorCreateTerm');
-        $termid = term_exists($term);
+        $termid = (int) term_exists($term);
 
         if (!$termid) {
             $termid = wp_insert_term($term, $taxname);
-            $termid = $termid['term_id'];
+            $termid = (int) $termid['term_id'];
         }
 
         wp_set_object_terms( $id, $termid, $taxname );
@@ -360,7 +366,7 @@ class AdtAjax {
 
             $wordpress_upload_dir = wp_upload_dir();
 
-            $filename = time() .'jpg';
+            $filename = time() .'.jpg';
 
             $new_file_path = $wordpress_upload_dir['path'] . '/' . $filename;
 
@@ -372,7 +378,7 @@ class AdtAjax {
 
                 $upload_id = wp_insert_attachment(array(
                     'guid' => $new_file_path,
-                    'post_mime_type' => mime_content_type($filename),
+                    'post_mime_type' => 'image/jpeg',
                     'post_title' => preg_replace('/\.[^.]+$/', '', $filename),
                     'post_content' => '',
                     'post_status' => 'inherit'
@@ -384,8 +390,7 @@ class AdtAjax {
                 // Generate and save the attachment metas into the database
                 wp_update_attachment_metadata($upload_id, wp_generate_attachment_metadata($upload_id, $new_file_path));
 
-                // Show the uploaded file in browser
-                wp_redirect($wordpress_upload_dir['url'] . '/' . basename($new_file_path));
+                $upload_ids[] = $upload_id;
 
             }
         }
